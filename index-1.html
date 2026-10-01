@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prompt App Builder</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090c12;color:#f5f7fb;font-family:Inter,Arial,sans-serif;height:100vh;overflow:hidden}
+button,input,textarea{font:inherit}button{cursor:pointer}.top{height:64px;border-bottom:1px solid #252b38;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#0d1119}
+.brand{display:flex;gap:10px;align-items:center}.logo{width:36px;height:36px;border-radius:10px;background:#7657ff;display:grid;place-items:center;font-weight:900}.brand b{display:block}.brand small{color:#8791a4}.top-actions{display:flex;gap:8px}.btn{border:1px solid #30384a;background:#171d29;color:#fff;padding:9px 13px;border-radius:9px}.btn.primary{background:#7657ff;border-color:#7657ff}.layout{height:calc(100vh - 64px);display:grid;grid-template-columns:330px 1fr}.sidebar{border-right:1px solid #252b38;padding:18px;overflow:auto}.sidebar h2{font-size:17px;margin:0 0 6px}.muted{color:#8993a7;font-size:13px;line-height:1.5}.prompt{width:100%;min-height:190px;resize:vertical;background:#111722;border:1px solid #30384a;border-radius:12px;color:#fff;padding:13px;outline:none;margin-top:12px}.prompt:focus{border-color:#7657ff}.generate{width:100%;margin-top:10px;padding:12px;border:0;border-radius:10px;background:#7657ff;color:#fff;font-weight:800}.examples{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.examples button{font-size:11px;padding:7px 9px;border:1px solid #30384a;background:#141a25;color:#bbc3d1;border-radius:8px}.status{margin-top:12px;font-size:12px;color:#8993a7}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#35d07f;margin-right:6px}.workspace{display:flex;flex-direction:column;min-width:0}.toolbar{height:58px;border-bottom:1px solid #252b38;display:flex;align-items:center;justify-content:space-between;padding:0 15px}.tabs{display:flex;gap:4px}.tab{background:none;border:0;color:#8993a7;padding:9px 12px;border-radius:8px}.tab.active{background:#202737;color:#fff}.main{flex:1;display:grid;grid-template-columns:230px 1fr;min-height:0}.files{border-right:1px solid #252b38;padding:12px;overflow:auto}.files h3{font-size:12px;text-transform:uppercase;color:#727d92;margin:4px 7px 10px}.file{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;color:#c6ccda;font-size:13px}.file:hover,.file.active{background:#1b2230;color:#fff}.editor{min-width:0;display:flex;flex-direction:column}.editorbar{height:43px;border-bottom:1px solid #252b38;display:flex;align-items:center;padding:0 13px;color:#aeb6c6;font-size:13px}.code{margin:0;flex:1;padding:18px;background:#0b0f16;color:#dce2ee;overflow:auto;font:13px/1.6 Consolas,Monaco,monospace;white-space:pre-wrap;word-break:break-word}.preview{display:none;flex:1;background:#151a24;padding:20px}.preview iframe{width:100%;height:100%;border:0;border-radius:12px;background:#fff}.preview.active{display:block}.editor.hidden{display:none}.loading{opacity:.7;pointer-events:none}.error{color:#ff7885;font-size:12px;min-height:18px;margin:10px 0}.empty{height:100%;display:grid;place-items:center;color:#687389;text-align:center;padding:30px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.sidebar{display:none}.main{grid-template-columns:160px 1fr}.top-actions .btn:nth-child(2){display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo">✦</div><div><b>Prompt App Builder</b><small> Build apps from a prompt</small></div></div>
+  <div class="top-actions"><button class="btn" id="newBtn">New</button><button class="btn primary" id="downloadBtn">Download ZIP</button></div>
+</header>
+
+<div class="layout">
+<aside class="sidebar">
+  <h2>Describe your app</h2>
+  <div class="muted">Type what you want to build. The builder creates a multi-file project.</div>
+  <textarea id="prompt" class="prompt" placeholder="Example: Create a modern food delivery app called QuickBite with login, restaurants, search, cart, checkout and mobile responsive design."></textarea>
+  <div class="examples">
+    <button>Store</button><button>School</button><button>Football</button><button>Portfolio</button>
+  </div>
+  <button class="generate" id="generateBtn">✦ Generate App</button>
+  <div class="error" id="error"></div>
+  <div class="status"><span class="dot"></span>Ready</div>
+</aside>
+
+<section class="workspace">
+  <div class="toolbar">
+    <div class="tabs"><button class="tab active" id="codeTab">Code</button><button class="tab" id="previewTab">Preview</button></div>
+    <div class="muted" id="projectName">No project yet</div>
+  </div>
+  <div class="main">
+    <nav class="files" id="files"><h3>Project files</h3><div class="empty">Generate an app to create files.</div></nav>
+    <section class="editor" id="editor">
+      <div class="editorbar" id="editorbar">No file selected</div>
+      <pre class="code" id="code">Your generated code will appear here.</pre>
+    </section>
+    <section class="preview" id="preview"><iframe id="frame" sandbox="allow-scripts allow-forms"></iframe></section>
+  </div>
+</section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let project={}, current="";
+
+const templates={
+"index.html":`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Generated App</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app"><h1>My Generated App</h1><p>Describe an app and connect an AI endpoint to generate it.</p><button id="hello">Click me</button></div>
+<script src="app.js"><\/script>
+</body>
+</html>`,
+"style.css":`body{margin:0;font-family:Arial;background:#f4f6fb}.app{max-width:700px;margin:80px auto;background:white;padding:30px;border-radius:20px;text-align:center;box-shadow:0 10px 30px #0001}button{padding:12px 20px;border:0;border-radius:10px;background:#7657ff;color:white}`,
+"app.js":`document.getElementById('hello')?.addEventListener('click',()=>alert('Hello from your generated app!'));`,
+"README.md":`# My Generated App
+
+This project was created with Prompt App Builder.
+
+## Files
+- index.html
+- style.css
+- app.js
+- README.md
+- package.json
+
+## Run
+Open index.html in a browser.`,
+"package.json":`{
+  "name":"my-generated-app",
+  "version":"1.0.0",
+  "private":true
+}`
+};
+
+function renderFiles(){
+  const nav=$("files"); nav.innerHTML="<h3>Project files</h3>";
+  Object.keys(project).forEach(name=>{
+    const el=document.createElement("div"); el.className="file"+(name===current?" active":"");
+    el.textContent=(name.endsWith(".html")?"🌐 ":name.endsWith(".css")?"🎨 ":name.endsWith(".js")?"⚙️ ":name.endsWith(".json")?"📦 ":"📄 ")+name;
+    el.onclick=()=>selectFile(name); nav.appendChild(el);
+  });
+}
+function selectFile(name){
+  current=name;$("editorbar").textContent=name;$("code").textContent=project[name]||"";
+  renderFiles();
+}
+function showPreview(){
+  $("codeTab").classList.remove("active");$("previewTab").classList.add("active");
+  $("editor").classList.add("hidden");$("preview").classList.add("active");
+  let html=project["index.html"]||"";
+  const css=project["style.css"]||"", js=project["app.js"]||"";
+  html=html.replace(/<link[^>]+href=["']style\.css["'][^>]*>/i,`<style>${css}</style>`);
+  html=html.replace(/<script[^>]+src=["']app\.js["'][^>]*><\/script>/i,`<script>${js}<\/script>`);
+  $("frame").srcdoc=html;
+}
+function showCode(){
+  $("previewTab").classList.remove("active");$("codeTab").classList.add("active");
+  $("preview").classList.remove("active");$("editor").classList.remove("hidden");
+}
+$("codeTab").onclick=showCode;$("previewTab").onclick=showPreview;
+
+document.querySelectorAll(".examples button").forEach(b=>b.onclick=()=>{
+ const examples={Store:"Build a modern online clothing store with product cards, search, categories, cart, checkout and mobile design.",
+ School:"Build a school management app with student dashboard, courses, assignments, results and responsive mobile design.",
+ Football:"Build a football scores app with fixtures, teams, live score cards and a dark mobile-friendly design.",
+ Portfolio:"Build a professional portfolio website with hero, about, skills, projects, services and contact form."};
+ $("prompt").value=examples[b.textContent];
+});
+
+$("newBtn").onclick=()=>{project={};current="";$("projectName").textContent="No project yet";renderFiles();$("code").textContent="Your generated code will appear here.";showCode()};
+
+$("generateBtn").onclick=async()=>{
+ const p=$("prompt").value.trim();$("error").textContent="";
+ if(!p){$("error").textContent="Enter a description first.";return}
+ $("generateBtn").classList.add("loading");$("generateBtn").textContent="Generating...";
+ try{
+   // If you connect a backend, POST the prompt to /api/generate.
+   // This standalone version creates a complete starter project locally.
+   project={
+    "index.html":templates["index.html"].replace("My Generated App",p.slice(0,40)),
+    "style.css":templates["style.css"],
+    "app.js":templates["app.js"],
+    "README.md":templates["README.md"]+"\n\n## Original prompt\n"+p,
+    "package.json":templates["package.json"].replace("my-generated-app",p.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"generated-app")
+   };
+   $("projectName").textContent="Generated App";
+   current="index.html";renderFiles();selectFile(current);showPreview();
+ }catch(e){$("error").textContent=e.message||"Generation failed."}
+ finally{$("generateBtn").classList.remove("loading");$("generateBtn").textContent="✦ Generate App"}
+};
+
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+async function downloadZip(){
+ if(!Object.keys(project).length){$("error").textContent="Generate an app first.";return}
+ // Create a downloadable ZIP using the browser's built-in CompressionStream
+ // through a tiny custom ZIP writer.
+ const files=Object.entries(project);
+ const enc=new TextEncoder(), chunks=[], central=[]; let offset=0;
+ const crcTable=(()=>{let t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xedb88320^(c>>>1)):(c>>>1);t[n]=c>>>0}return t})();
+ const crc32=data=>{let c=0xffffffff;for(const x of data)c=crcTable[(c^x)&255]^(c>>>8);return (c^0xffffffff)>>>0};
+ const u16=n=>new Uint8Array([n&255,n>>>8&255]),u32=n=>new Uint8Array([n&255,n>>>8&255,n>>>16&255,n>>>24&255]);
+ const cat=a=>{let n=a.reduce((x,y)=>x+y.length,0),o=new Uint8Array(n),p=0;for(const x of a){o.set(x,p);p+=x.length}return o};
+ for(const [name,text] of files){
+   const nb=enc.encode(name),data=enc.encode(text),crc=crc32(data);
+   const local=cat([new Uint8Array([80,75,3,4]),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(nb.length),u16(0),nb,data]);
+   chunks.push(local);
+   central.push(cat([new Uint8Array([80,75,1,2]),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(nb.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),nb]));
+   offset+=local.length;
+ }
+ const c=cat(central),body=cat([...chunks,c,cat([new Uint8Array([80,75,5,6]),u16(0),u16(0),u16(files.length),u16(files.length),u32(c.length),u32(offset),u16(0)])]);
+ const blob=new Blob([body],{type:"application/zip"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="prompt-app-builder-project.zip";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$("downloadBtn").onclick=downloadZip;
+</script>
+</body>
+</html>
